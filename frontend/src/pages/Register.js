@@ -58,7 +58,7 @@ export default function Register() {
       });
       
       alert('Registration successful! Please login with your credentials.');
-      navigate('/login');
+      navigate('/');
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed');
     } finally {
@@ -128,7 +128,7 @@ export default function Register() {
         </form>
         <div className="auth-footer">
           <p>Already have an account?</p>
-          <Link to="/login" className="auth-link">Login here</Link>
+          <Link to="/" className="auth-link">Login here</Link>
         </div>
       </div>
     </div>
