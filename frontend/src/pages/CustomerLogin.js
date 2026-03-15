@@ -55,11 +55,11 @@ export default function CustomerLogin() {
         </form>
         <div className="auth-footer">
           <p>Don't have an account?</p>
-          <Link to="/customer-register" className="auth-link">Register here</Link>
+          <Link to="/" className="auth-link">Register here</Link>
         </div>
         <div className="auth-footer" style={{ borderTop: '1px solid #e2e8f0', paddingTop: '15px', marginTop: '15px' }}>
           <p>Are you staff or admin?</p>
-          <Link to="/login" className="auth-link">Login here</Link>
+          <Link to="/" className="auth-link">Login here</Link>
         </div>
       </div>
     </div>

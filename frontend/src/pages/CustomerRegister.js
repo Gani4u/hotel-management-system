@@ -56,7 +56,7 @@ export default function CustomerRegister() {
       });
       
       alert('Registration successful! Please login to your account.');
-      navigate('/customer-login');
+      navigate('/');
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed');
     } finally {
@@ -117,7 +117,7 @@ export default function CustomerRegister() {
         </form>
         <div className="auth-footer">
           <p>Already have an account?</p>
-          <Link to="/customer-login" className="auth-link">Login here</Link>
+          <Link to="/" className="auth-link">Login here</Link>
         </div>
       </div>
     </div>

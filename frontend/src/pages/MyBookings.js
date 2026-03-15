@@ -12,7 +12,7 @@ export default function MyBookings() {
 
   useEffect(() => {
     if (!customer.id) {
-      navigate('/customer-login');
+      navigate('/');
       return;
     }
     fetchCustomerBookings();
@@ -46,7 +46,7 @@ export default function MyBookings() {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('customer');
-    navigate('/customer-login');
+    navigate('/');
   };
 
   if (loading) {
@@ -55,14 +55,22 @@ export default function MyBookings() {
 
   return (
     <div className="page-container">
+      <div className="customer-header">
+        <h1>My Bookings</h1>
+        <p>Welcome back, {customer.name}! Manage your reservations</p>
+      </div>
+
       <div className="page-header">
-        <div>
-          <h1>My Bookings</h1>
-          <p style={{ color: '#666', margin: '5px 0 0 0' }}>Welcome, {customer.name}</p>
+        <div style={{ flex: 1 }}>
+          <p style={{ color: '#e2e8f0', margin: '0', fontSize: '16px', opacity: '0.9' }}>
+            View and manage all your hotel bookings in one place
+          </p>
         </div>
         <div>
-          <button onClick={() => navigate('/browse-rooms')} className="btn-primary">Book More Rooms</button>
-          <button onClick={handleLogout} className="btn-logout" style={{ marginLeft: '10px' }}>Logout</button>
+          <button onClick={() => navigate('/browse-rooms')} className="btn-book" style={{ marginRight: '15px' }}>
+            Book More Rooms
+          </button>
+          <button onClick={handleLogout} className="btn-customer-logout">Logout</button>
         </div>
       </div>
 
@@ -70,7 +78,7 @@ export default function MyBookings() {
 
       {bookings.length === 0 ? (
         <div className="coming-soon">
-          <p>You haven't made any bookings yet. <a href="/browse-rooms" style={{ color: '#3b82f6', cursor: 'pointer' }}>Book a room now!</a></p>
+          <p>You haven't made any bookings yet. <span onClick={() => navigate('/browse-rooms')} style={{ color: '#3b82f6', cursor: 'pointer', textDecoration: 'underline' }}>Book a room now!</span></p>
         </div>
       ) : (
         <div className="table-wrapper">

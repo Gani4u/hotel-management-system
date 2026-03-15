@@ -77,7 +77,9 @@ export default function CheckInCheckOut() {
     <div className="page-container">
       <div className="page-header">
         <h1>Check-In / Check-Out Management</h1>
-        <button onClick={fetchData} className="btn-refresh">🔄 Refresh</button>
+        <button onClick={fetchData} className="btn-edit" style={{ fontSize: '14px', padding: '10px 16px' }}>
+          🔄 Refresh
+        </button>
       </div>
 
       {error && <div className="error-message">{error}</div>}
@@ -182,7 +184,7 @@ export default function CheckInCheckOut() {
                       <td>{booking.room_number}</td>
                       <td>{booking.type}</td>
                       <td>{new Date(booking.check_out).toLocaleDateString()}</td>
-                      <td>₹{booking.total_amount.toFixed(2)}</td>
+                      <td>${booking.total_amount.toFixed(2)}</td>
                       <td>
                         <span className={`status-badge status-${booking.payment_status}`}>
                           {booking.payment_status}

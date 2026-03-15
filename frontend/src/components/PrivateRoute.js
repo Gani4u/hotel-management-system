@@ -6,13 +6,13 @@ export default function PrivateRoute({ children }) {
   const user = JSON.parse(localStorage.getItem('user') || localStorage.getItem('customer') || '{}');
 
   if (!token) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
 
   // disallow customers from accessing staff/admin area
   if (user.role && user.role === 'customer') {
-    // customer should use customer portal
-    return <Navigate to="/customer-login" replace />;
+    // customer should use the public portal
+    return <Navigate to="/" replace />;
   }
 
   return children;

@@ -72,7 +72,7 @@ export default function BookRoom() {
 
     if (!customer.id) {
       setError('Customer information not found. Please login again.');
-      navigate('/customer-login');
+      navigate('/');
       return;
     }
 
@@ -114,7 +114,7 @@ export default function BookRoom() {
     return (
       <div className="page-container">
         <div className="error-message">
-          Please <a href="/customer-login" style={{ color: '#0c4a6e', textDecoration: 'underline' }}>login</a> to book a room
+          Please <a href="/" style={{ color: '#0c4a6e', textDecoration: 'underline' }}>login</a> to book a room
         </div>
       </div>
     );
