@@ -136,14 +136,19 @@ exports.updateBookingStatus = async (req, res) => {
         updateFields.push('checked_in_at = NOW()');
       }
 
-      if (status === 'checked_out') {
-        updateFields.push('checked_out_at = NOW()');
+      if (status === "checked_out") {
+        updateFields.push("checked_out_at = NOW()");
+
+        // ✅ AUTO COMPLETE PAYMENT
+        updateFields.push("payment_status = ?");
+        updateValues.push("completed");
+
         // Make room available after check-out
         const roomId = booking[0].room_id;
-        await connection.query(
-          'UPDATE rooms SET status = ? WHERE id = ?',
-          ['available', roomId]
-        );
+        await connection.query("UPDATE rooms SET status = ? WHERE id = ?", [
+          "available",
+          roomId,
+        ]);
       }
 
       updateValues.push(id);
@@ -240,8 +245,18 @@ exports.checkOut = async (req, res) => {
         return res.status(404).json({ message: 'Booking not found or not checked in' });
       }
 
-      const updateFields = ['status = ?', 'checked_out_at = NOW()', 'approved_by = ?'];
-      const updateValues = ['checked_out', staffId];
+      const updateFields = [
+        "status = ?",
+        "checked_out_at = NOW()",
+        "approved_by = ?",
+        "payment_status = ?", // ✅ ALWAYS UPDATE
+      ];
+
+      const updateValues = [
+        "checked_out",
+        staffId,
+        paymentStatus || "completed", // ✅ DEFAULT TO completed
+      ];
 
       if (paymentStatus) {
         updateFields.push('payment_status = ?');
