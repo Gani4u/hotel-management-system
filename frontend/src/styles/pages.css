@@ -980,3 +980,108 @@
     width: 95%;
   }
 }
+
+.filter-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.filter-bar button {
+  padding: 8px 16px;
+  border: none;
+  background: #eee;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.filter-bar button:hover {
+  background: #ddd;
+}
+
+.date-range {
+  display: flex;
+  gap: 10px;
+}
+/* 🔥 REVENUE SECTION */
+.revenue-section {
+  margin-top: 30px;
+  padding: 25px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+}
+
+/* 🔹 TABS */
+.tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.tab {
+  padding: 10px 18px;
+  border-radius: 30px;
+  border: none;
+  background: #f1f5f9;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+.tab:hover {
+  background: #e2e8f0;
+}
+
+.tab.active {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+/* 📅 DATE PICKER */
+.date-picker {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.date-picker input {
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+.date-picker button {
+  padding: 8px 14px;
+  border: none;
+  background: #667eea;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* 💰 REVENUE CARD */
+.revenue-card {
+  margin-top: 10px;
+  padding: 30px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  text-align: center;
+}
+
+.revenue-card h3 {
+  margin: 0;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+.revenue-card h1 {
+  font-size: 42px;
+  margin: 10px 0;
+}
+
+.revenue-card p {
+  opacity: 0.8;
+}

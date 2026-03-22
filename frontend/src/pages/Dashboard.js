@@ -6,23 +6,36 @@ export default function Dashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [range, setRange] = useState("today");
+  const [customDates, setCustomDates] = useState({
+    startDate: "",
+    endDate: "",
+  });
+  
 
   useEffect(() => {
     fetchStats();
   }, []);
 
-  const fetchStats = async () => {
+  const fetchStats = async (selectedRange = range) => {
     try {
       setLoading(true);
-      const response = await API.get('/dashboard/stats');
+
+      let url = `/dashboard/stats?range=${selectedRange}`;
+
+      if (selectedRange === "custom") {
+        url = `/dashboard/stats?startDate=${customDates.startDate}&endDate=${customDates.endDate}`;
+      }
+
+      const response = await API.get(url);
       setStats(response.data.data);
-      setError('');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch statistics');
+      setError(err.response?.data?.message || "Failed to fetch statistics");
     } finally {
       setLoading(false);
     }
   };
+
 
   if (loading) {
     return <div className="page-container"><div className="loading">Loading statistics...</div></div>;
@@ -37,39 +50,87 @@ export default function Dashboard() {
       {error && <div className="error-message">{error}</div>}
 
       {stats && (
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-icon">🏨</div>
-            <div className="stat-content">
-              <h3>Total Rooms</h3>
-              <p className="stat-value">{stats.totalRooms}</p>
+        <>
+          {/* 🔹 STATS */}
+          <div className="stats-grid">
+            <div className="stat-card">
+              <div className="stat-icon">🏨</div>
+              <div>
+                <h4>Total Rooms</h4>
+                <h2>{stats.totalRooms}</h2>
+              </div>
+            </div>
+
+            <div className="stat-card">
+              <div className="stat-icon">✅</div>
+              <div>
+                <h4>Available</h4>
+                <h2>{stats.availableRooms}</h2>
+              </div>
+            </div>
+
+            <div className="stat-card">
+              <div className="stat-icon">🔒</div>
+              <div>
+                <h4>Booked</h4>
+                <h2>{stats.bookedRooms}</h2>
+              </div>
             </div>
           </div>
 
-          <div className="stat-card">
-            <div className="stat-icon">✅</div>
-            <div className="stat-content">
-              <h3>Available Rooms</h3>
-              <p className="stat-value">{stats.availableRooms}</p>
+          {/* 🔥 REVENUE SECTION */}
+          <div className="revenue-section">
+            {/* FILTER TABS */}
+            <div className="tabs">
+              {["today", "week", "month", "custom"].map((item) => (
+                <button
+                  key={item}
+                  className={range === item ? "tab active" : "tab"}
+                  onClick={() => {
+                    setRange(item);
+                    if (item !== "custom") fetchStats(item);
+                  }}
+                >
+                  {item.toUpperCase()}
+                </button>
+              ))}
             </div>
-          </div>
 
-          <div className="stat-card">
-            <div className="stat-icon">🔒</div>
-            <div className="stat-content">
-              <h3>Booked Rooms</h3>
-              <p className="stat-value">{stats.bookedRooms}</p>
-            </div>
-          </div>
+            {/* CUSTOM DATE */}
+            {range === "custom" && (
+              <div className="date-picker">
+                <input
+                  type="date"
+                  onChange={(e) =>
+                    setCustomDates({
+                      ...customDates,
+                      startDate: e.target.value,
+                    })
+                  }
+                />
+                <input
+                  type="date"
+                  onChange={(e) =>
+                    setCustomDates({
+                      ...customDates,
+                      endDate: e.target.value,
+                    })
+                  }
+                />
+                <button onClick={() => fetchStats("custom")}>Apply</button>
+              </div>
+            )}
 
-          <div className="stat-card">
-            <div className="stat-icon">💰</div>
-            <div className="stat-content">
+            {/* 💰 REVENUE CARD */}
+            <div className="revenue-card">
               <h3>Total Revenue</h3>
-              <p className="stat-value">${Number(stats.totalRevenue || 0).toFixed(2)}</p>
+              <h1>
+                ₹{Number(stats.totalRevenue || 0).toLocaleString("en-IN")}
+              </h1>
+              <p>{range.toUpperCase()} earnings</p>
             </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
