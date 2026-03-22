@@ -101,6 +101,7 @@ export default function Dashboard() {
               <div className="date-picker">
                 <input
                   type="date"
+                  value={customDates.startDate}
                   onChange={(e) =>
                     setCustomDates({
                       ...customDates,
@@ -108,8 +109,10 @@ export default function Dashboard() {
                     })
                   }
                 />
+
                 <input
                   type="date"
+                  value={customDates.endDate}
                   onChange={(e) =>
                     setCustomDates({
                       ...customDates,
