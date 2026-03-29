@@ -865,6 +865,15 @@
     padding: 20px;
   }
 
+    .room-image {
+      height: 240px;
+      position: relative;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
   .booking-form {
     padding: 25px;
   }

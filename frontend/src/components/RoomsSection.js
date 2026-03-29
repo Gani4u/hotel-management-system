@@ -1,6 +1,13 @@
 import React from 'react';
+import room1 from "../assets/room/luxury-hotel-room.png";
+import room2 from "../assets/room/luxurious-hotel-room-and-or-honeymoon-suite.png";
+import room3 from "../assets/room/3d-render-of-luxury-hotel-room.png";
 
 const RoomCard = ({ room, checkIn, checkOut, onBookNow }) => {
+  const images = [room1, room2, room3];
+
+  // Pick image based on room id (repeat automatically)
+  const roomImage = images[room.id % 3];
   const calculateNights = () => {
     if (!checkIn || !checkOut) return 0;
     return Math.ceil((new Date(checkOut) - new Date(checkIn)) / (1000 * 60 * 60 * 24));
@@ -11,19 +18,26 @@ const RoomCard = ({ room, checkIn, checkOut, onBookNow }) => {
 
   return (
     <div className="room-card">
-      <div className="room-image">
+      <div
+        className="room-image"
+        style={{ backgroundImage: `url(${roomImage})` }}
+      >
         <div className="room-image-overlay"></div>
         <span className="room-type-badge">{room.type}</span>
         <div className="room-price-tag">₹{room.price}/night</div>
       </div>
       <div className="room-content">
         <h3>Room {room.room_number}</h3>
-        <p className="room-description">{room.description || `${room.type} room with great amenities`}</p>
+        <p className="room-description">
+          {room.description || `${room.type} room with great amenities`}
+        </p>
 
         <div className="room-details">
           <div className="detail">
             <span className="detail-icon">👥</span>
-            <span className="detail-text">{room.capacity} {room.capacity === 1 ? 'Guest' : 'Guests'}</span>
+            <span className="detail-text">
+              {room.capacity} {room.capacity === 1 ? "Guest" : "Guests"}
+            </span>
           </div>
           <div className="detail">
             <span className="detail-icon">📐</span>
@@ -41,7 +55,9 @@ const RoomCard = ({ room, checkIn, checkOut, onBookNow }) => {
         {nights > 0 && (
           <div className="booking-summary">
             <div className="summary-row">
-              <span>{nights} night{nights > 1 ? 's' : ''} × ₹{room.price}</span>
+              <span>
+                {nights} night{nights > 1 ? "s" : ""} × ₹{room.price}
+              </span>
               <span className="total-price">₹{totalPrice}</span>
             </div>
           </div>
@@ -50,9 +66,11 @@ const RoomCard = ({ room, checkIn, checkOut, onBookNow }) => {
         <button
           onClick={() => onBookNow(room.id)}
           className="btn-book-now"
-          disabled={!checkIn || !checkOut || new Date(checkIn) >= new Date(checkOut)}
+          disabled={
+            !checkIn || !checkOut || new Date(checkIn) >= new Date(checkOut)
+          }
         >
-          {checkIn && checkOut ? 'Book Now' : 'Select Dates First'}
+          {checkIn && checkOut ? "Book Now" : "Select Dates First"}
         </button>
       </div>
     </div>
