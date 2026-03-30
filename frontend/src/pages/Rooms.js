@@ -15,6 +15,8 @@ export default function Rooms() {
     capacity: '',
     description: '',
   });
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const isAdmin = user.role === 'admin';
 
   useEffect(() => {
     fetchRooms();
@@ -34,6 +36,11 @@ export default function Rooms() {
   };
 
   const handleOpenModal = () => {
+    if (!isAdmin) {
+      setError('Only admins can manage rooms');
+      return;
+    }
+
     setEditingId(null);
     setFormData({
       roomNumber: '',
@@ -46,6 +53,11 @@ export default function Rooms() {
   };
 
   const handleEditRoom = (room) => {
+    if (!isAdmin) {
+      setError('Only admins can manage rooms');
+      return;
+    }
+
     setEditingId(room.id);
     setFormData({
       roomNumber: room.room_number,
@@ -59,11 +71,26 @@ export default function Rooms() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!isAdmin) {
+      setError('Only admins can manage rooms');
+      return;
+    }
+
     try {
       if (editingId) {
-        await API.put(`/rooms/${editingId}`, formData);
+        await API.put(`/rooms/${editingId}`, {
+          roomNumber: formData.roomNumber,
+          type: formData.roomType,
+          price: formData.pricePerNight,
+          status: 'available',
+        });
       } else {
-        await API.post('/rooms', formData);
+        await API.post('/rooms', {
+          roomNumber: formData.roomNumber,
+          roomType: formData.roomType,
+          pricePerNight: formData.pricePerNight,
+        });
       }
       setShowModal(false);
       fetchRooms();
@@ -73,6 +100,11 @@ export default function Rooms() {
   };
 
   const handleDelete = async (id) => {
+    if (!isAdmin) {
+      setError('Only admins can manage rooms');
+      return;
+    }
+
     if (window.confirm('Are you sure?')) {
       try {
         await API.delete(`/rooms/${id}`);
@@ -91,7 +123,9 @@ export default function Rooms() {
     <div className="page-container">
       <div className="page-header">
         <h1>Rooms Management</h1>
-        <button onClick={handleOpenModal} className="btn-primary">+ Add Room</button>
+        {isAdmin && (
+          <button onClick={handleOpenModal} className="btn-primary">+ Add Room</button>
+        )}
       </div>
 
       {error && <div className="error-message">{error}</div>}
@@ -105,7 +139,7 @@ export default function Rooms() {
               <th>Price/Night</th>
               <th>Capacity</th>
               <th>Status</th>
-              <th>Actions</th>
+              {isAdmin && <th>Actions</th>}
             </tr>
           </thead>
           <tbody>
@@ -114,19 +148,21 @@ export default function Rooms() {
                 <td>{room.room_number}</td>
                 <td>{room.type}</td>
                 <td>${room.price}</td>
-                <td>{room.capacity} guests</td>
+                <td>{room.capacity || '-'}</td>
                 <td><span className={`status-badge status-${room.status}`}>{room.status}</span></td>
-                <td>
-                  <button onClick={() => handleEditRoom(room)} className="btn-small btn-edit">Edit</button>
-                  <button onClick={() => handleDelete(room.id)} className="btn-small btn-danger">Delete</button>
-                </td>
+                {isAdmin && (
+                  <td>
+                    <button onClick={() => handleEditRoom(room)} className="btn-small btn-edit">Edit</button>
+                    <button onClick={() => handleDelete(room.id)} className="btn-small btn-danger">Delete</button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      {showModal && (
+      {showModal && isAdmin && (
         <div className="modal-overlay">
           <div className="modal">
             <div className="modal-header">

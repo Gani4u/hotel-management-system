@@ -15,7 +15,10 @@ export default function BookRoom() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
-  const customer = JSON.parse(localStorage.getItem('customer') || '{}');
+  const customer =
+    JSON.parse(localStorage.getItem("customer")) ||
+    JSON.parse(localStorage.getItem("user")) ||
+    {};
 
   useEffect(() => {
     fetchRoomDetails();
@@ -49,20 +52,18 @@ export default function BookRoom() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
 
-    if (name === 'checkIn' || name === 'checkOut') {
-      if (roomDetails) {
-        const newTotal = calculateTotal(
-          name === 'checkIn' ? value : formData.checkIn,
-          name === 'checkOut' ? value : formData.checkOut,
-          roomDetails.price
-        );
-        setTotalAmount(newTotal);
-      }
+    if ((name === 'checkIn' || name === 'checkOut') && roomDetails) {
+      const newTotal = calculateTotal(
+        name === 'checkIn' ? value : formData.checkIn,
+        name === 'checkOut' ? value : formData.checkOut,
+        roomDetails.price
+      );
+      setTotalAmount(newTotal);
     }
   };
 
@@ -90,8 +91,7 @@ export default function BookRoom() {
 
     try {
       await API.post('/bookings', {
-        roomId: parseInt(roomId),
-        customerId: customer.id,
+        roomId: parseInt(roomId, 10),
         checkIn: formData.checkIn,
         checkOut: formData.checkOut,
         totalAmount,

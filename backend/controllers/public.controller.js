@@ -1,4 +1,4 @@
-const pool = require('../config/db');
+const pool = require("../config/db");
 
 // Get all available rooms (Public - No Auth Required)
 exports.getAvailableRooms = async (req, res) => {
@@ -6,62 +6,65 @@ exports.getAvailableRooms = async (req, res) => {
     const connection = await pool.getConnection();
 
     const [rooms] = await connection.query(
-      'SELECT id, room_number, type, capacity, price, description, amenities, floor, status FROM rooms WHERE status = ?',
-      ['available']
+      "SELECT id, room_number, type, price, status FROM rooms WHERE status = ?",
+      ["available"],
     );
 
     connection.release();
 
     res.status(200).json({
-      message: 'Available rooms retrieved successfully',
+      message: "Available rooms retrieved successfully",
       data: rooms,
     });
   } catch (error) {
-    console.error('Get available rooms error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Get available rooms error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
-// Get room details (Public - No Auth Required)
+// Get room details
 exports.getRoomDetails = async (req, res) => {
   try {
     const { roomId } = req.params;
     const connection = await pool.getConnection();
 
     const [rooms] = await connection.query(
-      'SELECT * FROM rooms WHERE id = ?',
-      [roomId]
+      "SELECT id, room_number, type, price, status FROM rooms WHERE id = ?",
+      [roomId],
     );
 
     connection.release();
 
     if (rooms.length === 0) {
-      return res.status(404).json({ message: 'Room not found' });
+      return res.status(404).json({ message: "Room not found" });
     }
 
     res.status(200).json({
-      message: 'Room details retrieved successfully',
+      message: "Room details retrieved successfully",
       data: rooms[0],
     });
   } catch (error) {
-    console.error('Get room details error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Get room details error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
-// Search available rooms by dates and type (Public - No Auth Required)
+// Search rooms
 exports.searchRooms = async (req, res) => {
   try {
-    const { checkIn, checkOut, roomType, capacity } = req.query;
+    const { checkIn, checkOut, roomType } = req.query;
 
     if (!checkIn || !checkOut) {
-      return res.status(400).json({ message: 'Check-in and check-out dates are required' });
+      return res
+        .status(400)
+        .json({ message: "Check-in and check-out dates are required" });
     }
 
     const connection = await pool.getConnection();
 
     let query = `
-      SELECT r.* FROM rooms r
+      SELECT r.id, r.room_number, r.type, r.price, r.status
+      FROM rooms r
       WHERE r.status = 'available'
       AND NOT EXISTS (
         SELECT 1 FROM bookings b
@@ -75,24 +78,19 @@ exports.searchRooms = async (req, res) => {
     const params = [checkOut, checkIn];
 
     if (roomType) {
-      query += ' AND LOWER(r.type) = LOWER(?)';
+      query += " AND LOWER(r.type) = LOWER(?)";
       params.push(roomType);
-    }
-
-    if (capacity) {
-      query += ' AND r.capacity >= ?';
-      params.push(parseInt(capacity));
     }
 
     const [rooms] = await connection.query(query, params);
     connection.release();
 
     res.status(200).json({
-      message: 'Rooms searched successfully',
+      message: "Rooms searched successfully",
       data: rooms,
     });
   } catch (error) {
-    console.error('Search rooms error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Search rooms error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };

@@ -8,7 +8,10 @@ export default function MyBookings() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const customer = JSON.parse(localStorage.getItem('customer') || '{}');
+  const customer =
+    JSON.parse(localStorage.getItem("customer")) ||
+    JSON.parse(localStorage.getItem("user")) ||
+    {};
 
   useEffect(() => {
     if (!customer.id) {
@@ -46,6 +49,7 @@ export default function MyBookings() {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('customer');
+    localStorage.removeItem('user');
     navigate('/');
   };
 

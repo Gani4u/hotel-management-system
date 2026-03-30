@@ -16,9 +16,9 @@ export default function CustomerRegister() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -39,14 +39,15 @@ export default function CustomerRegister() {
     setLoading(true);
 
     try {
-      await API.post('/customer/register', {
+      await API.post('/auth/register', {
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
         password: formData.password,
         confirmPassword: formData.confirmPassword,
+        role: 'customer',
       });
-      
+
       setFormData({
         name: '',
         email: '',
@@ -54,7 +55,7 @@ export default function CustomerRegister() {
         password: '',
         confirmPassword: '',
       });
-      
+
       alert('Registration successful! Please login to your account.');
       navigate('/');
     } catch (err) {

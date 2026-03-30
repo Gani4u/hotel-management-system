@@ -20,9 +20,9 @@ export default function RegisterModal({ isOpen, onClose, initialTab = 'customer'
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -44,26 +44,27 @@ export default function RegisterModal({ isOpen, onClose, initialTab = 'customer'
 
     try {
       if (activeTab === 'customer') {
-        await API.post('/customer/register', {
+        await API.post('/auth/register', {
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
           password: formData.password,
           confirmPassword: formData.confirmPassword,
+          role: 'customer',
         });
         alert('Registration successful! Please login to your account.');
-        navigate('/');
       } else {
         await API.post('/auth/register', {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
+          name: `${formData.firstName} ${formData.lastName}`.trim(),
           email: formData.email,
           password: formData.password,
+          confirmPassword: formData.confirmPassword,
           role: formData.role,
         });
         alert('Registration successful! Please login with your credentials.');
-        navigate('/');
       }
+
+      navigate('/');
       onClose();
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed');
