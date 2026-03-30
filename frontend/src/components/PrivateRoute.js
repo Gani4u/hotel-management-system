@@ -1,17 +1,14 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate } from "react-router-dom";
 
-export default function PrivateRoute({ children }) {
-  const token = localStorage.getItem('token');
-  // user info may be stored under 'user' (staff/admin) or 'customer'
-  const user = JSON.parse(localStorage.getItem('user') || localStorage.getItem('customer') || '{}');
+export default function PrivateRoute({ children, allowedRoles }) {
+  const token = localStorage.getItem("token");
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
 
   if (!token) {
     return <Navigate to="/" replace />;
   }
 
-  // disallow customers from accessing staff/admin area
-  if (user.role && user.role === 'customer') {
-    // customer should use the public portal
+  if (allowedRoles?.length && !allowedRoles.includes(user.role)) {
     return <Navigate to="/" replace />;
   }
 

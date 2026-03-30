@@ -17,25 +17,42 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public Landing Page */}
         <Route path="/" element={<Landing />} />
 
-        {/* Staff/Admin Routes (legacy - redirect to landing) */}
         <Route path="/login" element={<Navigate to="/" replace />} />
         <Route path="/register" element={<Navigate to="/" replace />} />
-
-        {/* Customer Routes (legacy - redirect to landing) */}
         <Route path="/customer-register" element={<Navigate to="/" replace />} />
         <Route path="/customer-login" element={<Navigate to="/" replace />} />
-        <Route path="/browse-rooms" element={<BrowseRooms />} />
-        <Route path="/book-room/:roomId" element={<BookRoom />} />
-        <Route path="/my-bookings" element={<MyBookings />} />
 
-        {/* Protected Staff/Admin Routes */}
+        <Route
+          path="/browse-rooms"
+          element={
+            <PrivateRoute allowedRoles={['customer']}>
+              <BrowseRooms />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/book-room/:roomId"
+          element={
+            <PrivateRoute allowedRoles={['customer']}>
+              <BookRoom />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/my-bookings"
+          element={
+            <PrivateRoute allowedRoles={['customer']}>
+              <MyBookings />
+            </PrivateRoute>
+          }
+        />
+
         <Route
           path="/*"
           element={
-            <PrivateRoute>
+            <PrivateRoute allowedRoles={['admin', 'staff']}>
               <div className="app-layout">
                 <Sidebar />
                 <div className="app-content">

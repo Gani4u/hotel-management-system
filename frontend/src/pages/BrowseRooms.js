@@ -8,7 +8,10 @@ export default function BrowseRooms() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const customer = JSON.parse(localStorage.getItem('customer') || '{}');
+  const customer =
+    JSON.parse(localStorage.getItem("customer")) ||
+    JSON.parse(localStorage.getItem("user")) ||
+    {};
 
   useEffect(() => {
     if (!customer.id) {
@@ -21,7 +24,7 @@ export default function BrowseRooms() {
   const fetchAvailableRooms = async () => {
     try {
       setLoading(true);
-      const response = await API.get('/customer/rooms/available');
+      const response = await API.get("/public/rooms");
       setRooms(response.data.data);
       setError('');
     } catch (err) {
@@ -31,13 +34,14 @@ export default function BrowseRooms() {
     }
   };
 
-  const handleBookRoom = (roomId) => {
-    navigate(`/book-room/${roomId}`);
+  const handleBookRoom = (id) => {
+    navigate(`/book-room/${id}`);
   };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('customer');
+    localStorage.removeItem('user');
     navigate('/');
   };
 
