@@ -8,6 +8,7 @@ const bookingRoutes = require('./routes/booking.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
 const customerRoutes = require('./routes/customer.routes');
 const publicRoutes = require('./routes/public.routes');
+const reviewRoutes = require('./routes/review.routes');
 
 const app = express();
 
@@ -21,6 +22,8 @@ app.use('/api/public', publicRoutes);
 app.use('/api/auth', authRoutes);
 
 // Customer Routes
+app.use('/api/reviews', reviewRoutes);
+
 app.use('/api/customer', customerRoutes);
 
 // Protected Routes

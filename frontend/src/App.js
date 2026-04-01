@@ -11,6 +11,7 @@ import BrowseRooms from './pages/BrowseRooms';
 import BookRoom from './pages/BookRoom';
 import MyBookings from './pages/MyBookings';
 import CheckInCheckOut from './pages/CheckInCheckOut';
+import Reviews from './pages/Review';
 import './App.css';
 
 export default function App() {
@@ -66,6 +67,7 @@ export default function App() {
                       <Route path="/check-in-out" element={<CheckInCheckOut />} />
                       <Route path="/" element={<Navigate to="/dashboard" replace />} />
                       <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                      <Route path="/reviews" element={<Reviews />} />
                     </Routes>
                   </main>
                 </div>

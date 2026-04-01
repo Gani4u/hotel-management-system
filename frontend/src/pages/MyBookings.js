@@ -1,15 +1,20 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import API from '../services/api';
-import '../styles/pages.css';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import API from "../services/api";
+import ReviewModal from "../components/ReviewModal";
+import "../styles/pages.css";
+import "../App.css";
 
 export default function MyBookings() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [cancellingId, setCancellingId] = useState(null);
-  const [showModal, setShowModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedBookingId, setSelectedBookingId] = useState(null);
-  const [error, setError] = useState('');
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [reviewBooking, setReviewBooking] = useState(null);
+  const [error, setError] = useState("");
+
   const navigate = useNavigate();
   const customer =
     JSON.parse(localStorage.getItem("customer")) ||
@@ -18,7 +23,7 @@ export default function MyBookings() {
 
   useEffect(() => {
     if (!customer.id) {
-      navigate('/');
+      navigate("/customer-login");
       return;
     }
     fetchCustomerBookings();
@@ -27,65 +32,79 @@ export default function MyBookings() {
   const fetchCustomerBookings = async () => {
     try {
       setLoading(true);
-      const response = await API.get('/customer/bookings');
-      setBookings(response.data.data);
-      setError('');
+      const response = await API.get("/customer/bookings");
+      setBookings(response.data.data || []);
+      setError("");
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch bookings');
+      setError(err.response?.data?.message || "Failed to fetch bookings");
     } finally {
       setLoading(false);
     }
   };
 
- const handleCancelBooking = async () => {
-   if (!selectedBookingId) return;
+  const handleCancelBooking = async () => {
+    if (!selectedBookingId) return;
 
-   setCancellingId(selectedBookingId);
+    try {
+      setCancellingId(selectedBookingId);
+      await API.delete(`/customer/bookings/${selectedBookingId}`);
 
-   try {
-     await API.delete(`/customer/bookings/${selectedBookingId}`);
+      setBookings((prev) =>
+        prev.map((b) =>
+          b.id === selectedBookingId ? { ...b, status: "cancelled" } : b,
+        ),
+      );
 
-     setBookings((prev) =>
-       prev.map((b) =>
-         b.id === selectedBookingId ? { ...b, status: "cancelled" } : b,
-       ),
-     );
+      setShowCancelModal(false);
+      setSelectedBookingId(null);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to cancel booking");
+    } finally {
+      setCancellingId(null);
+    }
+  };
 
-     setShowModal(false);
-     setSelectedBookingId(null);
-   } catch (err) {
-     setError(err.response?.data?.message || "Failed to cancel booking");
-   } finally {
-     setCancellingId(null);
-   }
- };
- const handleDownloadBill = async (bookingId) => {
-   try {
-     const response = await API.get(`/bookings/${bookingId}/bill`, {
-       responseType: "blob",
-     });
+  const handleDownloadBill = async (bookingId) => {
+    try {
+      const response = await API.get(`/bookings/${bookingId}/bill`, {
+        responseType: "blob",
+      });
 
-     const url = window.URL.createObjectURL(new Blob([response.data]));
-     const link = document.createElement("a");
-     link.href = url;
-     link.setAttribute("download", `invoice_${bookingId}.pdf`);
-     document.body.appendChild(link);
-     link.click();
-     link.remove();
-   } catch (err) {
-     setError("Failed to download bill");
-   }
- };
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `invoice_${bookingId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      setError("Failed to download bill");
+    }
+  };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('customer');
-    localStorage.removeItem('user');
-    navigate('/');
+    localStorage.removeItem("token");
+    localStorage.removeItem("customer");
+    localStorage.removeItem("user");
+    navigate("/customer-login");
+  };
+
+  const openReviewModal = (booking) => {
+    setReviewBooking(booking);
+    setReviewModalOpen(true);
+  };
+
+  const closeReviewModal = () => {
+    setReviewBooking(null);
+    setReviewModalOpen(false);
   };
 
   if (loading) {
-    return <div className="page-container"><div className="loading">Loading your bookings...</div></div>;
+    return (
+      <div className="page-container">
+        <div className="loading">Loading your bookings...</div>
+      </div>
+    );
   }
 
   return (
@@ -100,12 +119,12 @@ export default function MyBookings() {
           <p
             style={{
               color: "#e2e8f0",
-              margin: "0",
+              margin: 0,
               fontSize: "16px",
-              opacity: "0.9",
+              opacity: 0.9,
             }}
           >
-            View and manage all your hotel bookings in one place
+            View bills, manage bookings, and rate completed stays
           </p>
         </div>
         <div>
@@ -151,6 +170,7 @@ export default function MyBookings() {
                 <th>Check-Out</th>
                 <th>Total Amount</th>
                 <th>Status</th>
+                <th>Review</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -161,7 +181,7 @@ export default function MyBookings() {
                   <td>{booking.type}</td>
                   <td>{new Date(booking.check_in).toLocaleDateString()}</td>
                   <td>{new Date(booking.check_out).toLocaleDateString()}</td>
-                  <td>${Number(booking.total_amount || 0).toFixed(2)}</td>
+                  <td>₹{Number(booking.total_amount || 0).toFixed(2)}</td>
                   <td>
                     <span
                       className={`status-badge status-${booking.status.toLowerCase()}`}
@@ -169,31 +189,54 @@ export default function MyBookings() {
                       {booking.status}
                     </span>
                   </td>
-                  <td>
-                    {/* Cancel Button */}
-                    {(booking.status === "reserved" ||
-                      booking.status === "checked_in") && (
-                      <button
-                        onClick={() => {
-                          setSelectedBookingId(booking.id);
-                          setShowModal(true);
-                        }}
-                        className="btn-small btn-danger"
-                        style={{ marginRight: "8px" }}
-                      >
-                        Cancel
-                      </button>
-                    )}
 
-                    {/* Download Bill Button */}
-                    {booking.status === "checked_out" && (
-                      <button
-                        onClick={() => handleDownloadBill(booking.id)}
-                        className="btn-small btn-primary"
-                      >
-                        Download Bill
-                      </button>
+                  <td>
+                    {booking.review_id ? (
+                      <span className="review-pill">
+                        ★ {booking.review_rating}/5
+                      </span>
+                    ) : booking.status === "checked_out" ? (
+                      <span className="review-pill pending">Pending</span>
+                    ) : (
+                      <span className="review-pill muted">Not available</span>
                     )}
+                  </td>
+
+                  <td>
+                    <div className="booking-action-group">
+                      {(booking.status === "reserved" ||
+                        booking.status === "checked_in") && (
+                        <button
+                          onClick={() => {
+                            setSelectedBookingId(booking.id);
+                            setShowCancelModal(true);
+                          }}
+                          className="btn-small btn-danger"
+                        >
+                          Cancel
+                        </button>
+                      )}
+
+                      {booking.status === "checked_out" && (
+                        <>
+                          <button
+                            onClick={() => handleDownloadBill(booking.id)}
+                            className="btn-small btn-primary"
+                          >
+                            Download Bill
+                          </button>
+
+                          {!booking.review_id && (
+                            <button
+                              onClick={() => openReviewModal(booking)}
+                              className="btn-small btn-review"
+                            >
+                              Rate Stay
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -201,7 +244,8 @@ export default function MyBookings() {
           </table>
         </div>
       )}
-      {showModal && (
+
+      {showCancelModal && (
         <div className="modal-overlay">
           <div className="modal-box">
             <h3>Cancel Booking</h3>
@@ -212,7 +256,7 @@ export default function MyBookings() {
               <button
                 className="btn-small"
                 onClick={() => {
-                  setShowModal(false);
+                  setShowCancelModal(false);
                   setSelectedBookingId(null);
                 }}
               >
@@ -232,6 +276,13 @@ export default function MyBookings() {
           </div>
         </div>
       )}
+
+      <ReviewModal
+        open={reviewModalOpen}
+        booking={reviewBooking}
+        onClose={closeReviewModal}
+        onSuccess={fetchCustomerBookings}
+      />
     </div>
   );
 }
