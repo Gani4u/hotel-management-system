@@ -59,6 +59,23 @@ export default function MyBookings() {
      setCancellingId(null);
    }
  };
+ const handleDownloadBill = async (bookingId) => {
+   try {
+     const response = await API.get(`/bookings/${bookingId}/bill`, {
+       responseType: "blob",
+     });
+
+     const url = window.URL.createObjectURL(new Blob([response.data]));
+     const link = document.createElement("a");
+     link.href = url;
+     link.setAttribute("download", `invoice_${bookingId}.pdf`);
+     document.body.appendChild(link);
+     link.click();
+     link.remove();
+   } catch (err) {
+     setError("Failed to download bill");
+   }
+ };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -153,6 +170,7 @@ export default function MyBookings() {
                     </span>
                   </td>
                   <td>
+                    {/* Cancel Button */}
                     {(booking.status === "reserved" ||
                       booking.status === "checked_in") && (
                       <button
@@ -161,8 +179,19 @@ export default function MyBookings() {
                           setShowModal(true);
                         }}
                         className="btn-small btn-danger"
+                        style={{ marginRight: "8px" }}
                       >
                         Cancel
+                      </button>
+                    )}
+
+                    {/* Download Bill Button */}
+                    {booking.status === "checked_out" && (
+                      <button
+                        onClick={() => handleDownloadBill(booking.id)}
+                        className="btn-small btn-primary"
+                      >
+                        Download Bill
                       </button>
                     )}
                   </td>
