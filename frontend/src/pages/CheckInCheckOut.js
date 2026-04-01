@@ -9,10 +9,20 @@ export default function CheckInCheckOut() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const [showAccessModal, setShowAccessModal] = useState(false);
+
+  const [showCheckInModal, setShowCheckInModal] = useState(false);
+  const [selectedBookingId, setSelectedBookingId] = useState(null);
+
+  const [showCheckOutModal, setShowCheckOutModal] = useState(false);
+  const [selectedPaymentStatus, setSelectedPaymentStatus] = useState("");
+
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
     if (user.role !== 'admin' && user.role !== 'staff') {
-      alert('Access denied');
+      setShowAccessModal(true);
       return;
     }
     fetchData();
@@ -36,32 +46,33 @@ export default function CheckInCheckOut() {
     }
   };
 
-  const handleCheckIn = async (bookingId) => {
-    if (window.confirm('Mark this guest as checked in?')) {
-      try {
-        await API.post(`/bookings/${bookingId}/check-in`);
-        alert('Guest checked in successfully');
-        fetchData();
-      } catch (err) {
-        setError(err.response?.data?.message || 'Check-in failed');
-      }
+  const handleCheckIn = async () => {
+    try {
+      await API.post(`/bookings/${selectedBookingId}/check-in`);
+
+      setShowCheckInModal(false);
+      setSuccessMessage("Guest checked in successfully");
+      setShowSuccessModal(true);
+
+      fetchData();
+    } catch (err) {
+      setError(err.response?.data?.message || "Check-in failed");
     }
   };
 
-  const handleCheckOut = async (bookingId, paymentStatus) => {
-    if (!paymentStatus) {
-      alert('Please select payment status');
-      return;
-    }
+  const handleCheckOut = async () => {
+    try {
+      await API.post(`/bookings/${selectedBookingId}/check-out`, {
+        paymentStatus: selectedPaymentStatus,
+      });
 
-    if (window.confirm('Mark this guest as checked out?')) {
-      try {
-        await API.post(`/bookings/${bookingId}/check-out`, { paymentStatus });
-        alert('Guest checked out successfully');
-        fetchData();
-      } catch (err) {
-        setError(err.response?.data?.message || 'Check-out failed');
-      }
+      setShowCheckOutModal(false);
+      setSuccessMessage("Guest checked out successfully");
+      setShowSuccessModal(true);
+
+      fetchData();
+    } catch (err) {
+      setError(err.response?.data?.message || "Check-out failed");
     }
   };
 
@@ -77,7 +88,11 @@ export default function CheckInCheckOut() {
     <div className="page-container">
       <div className="page-header">
         <h1>Check-In / Check-Out Management</h1>
-        <button onClick={fetchData} className="btn-edit" style={{ fontSize: '14px', padding: '10px 16px' }}>
+        <button
+          onClick={fetchData}
+          className="btn-edit"
+          style={{ fontSize: "14px", padding: "10px 16px" }}
+        >
           🔄 Refresh
         </button>
       </div>
@@ -86,21 +101,21 @@ export default function CheckInCheckOut() {
 
       <div className="tabs">
         <button
-          className={`tab-button ${activeTab === 'check-in' ? 'active' : ''}`}
-          onClick={() => setActiveTab('check-in')}
+          className={`tab-button ${activeTab === "check-in" ? "active" : ""}`}
+          onClick={() => setActiveTab("check-in")}
         >
           ✓ Today's Check-Ins ({checkIns.length})
         </button>
         <button
-          className={`tab-button ${activeTab === 'check-out' ? 'active' : ''}`}
-          onClick={() => setActiveTab('check-out')}
+          className={`tab-button ${activeTab === "check-out" ? "active" : ""}`}
+          onClick={() => setActiveTab("check-out")}
         >
           ✗ Today's Check-Outs ({checkOuts.length})
         </button>
       </div>
 
       {/* CHECK-IN TAB */}
-      {activeTab === 'check-in' && (
+      {activeTab === "check-in" && (
         <div className="tab-content">
           {checkIns.length === 0 ? (
             <div className="coming-soon">
@@ -132,12 +147,15 @@ export default function CheckInCheckOut() {
                       <td>{new Date(booking.check_in).toLocaleDateString()}</td>
                       <td>
                         <span className="special-requests">
-                          {booking.special_requests || '-'}
+                          {booking.special_requests || "-"}
                         </span>
                       </td>
                       <td>
                         <button
-                          onClick={() => handleCheckIn(booking.id)}
+                          onClick={() => {
+                            setSelectedBookingId(booking.id);
+                            setShowCheckInModal(true);
+                          }}
                           className="btn-small btn-success"
                         >
                           Check In
@@ -153,7 +171,7 @@ export default function CheckInCheckOut() {
       )}
 
       {/* CHECK-OUT TAB */}
-      {activeTab === 'check-out' && (
+      {activeTab === "check-out" && (
         <div className="tab-content">
           {checkOuts.length === 0 ? (
             <div className="coming-soon">
@@ -183,17 +201,27 @@ export default function CheckInCheckOut() {
                       <td>{booking.customer_phone}</td>
                       <td>{booking.room_number}</td>
                       <td>{booking.type}</td>
-                      <td>{new Date(booking.check_out).toLocaleDateString()}</td>
+                      <td>
+                        {new Date(booking.check_out).toLocaleDateString()}
+                      </td>
                       <td>${booking.total_amount.toFixed(2)}</td>
                       <td>
-                        <span className={`status-badge status-${booking.payment_status}`}>
+                        <span
+                          className={`status-badge status-${booking.payment_status}`}
+                        >
                           {booking.payment_status}
                         </span>
                       </td>
                       <td>
                         <select
                           className="payment-select"
-                          onChange={(e) => handleCheckOut(booking.id, e.target.value)}
+                          onChange={(e) => {
+                            if (!e.target.value) return;
+
+                            setSelectedBookingId(booking.id);
+                            setSelectedPaymentStatus(e.target.value);
+                            setShowCheckOutModal(true);
+                          }}
                           defaultValue=""
                         >
                           <option value="">Select Payment</option>
@@ -208,6 +236,85 @@ export default function CheckInCheckOut() {
               </table>
             </div>
           )}
+        </div>
+      )}
+      {showAccessModal && (
+        <div className="modal-overlay">
+          <div className="modal-box">
+            <h3>Access Denied</h3>
+            <p>You are not authorized to access this page.</p>
+
+            <div className="modal-actions">
+              <button
+                className="btn-primary"
+                onClick={() => setShowAccessModal(false)}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showCheckInModal && (
+        <div className="modal-overlay">
+          <div className="modal-box">
+            <h3>Confirm Check-In</h3>
+            <p>Mark this guest as checked in?</p>
+
+            <div className="modal-actions">
+              <button
+                onClick={() => setShowCheckInModal(false)}
+                className="btn-small"
+              >
+                Cancel
+              </button>
+
+              <button onClick={handleCheckIn} className="btn-small btn-success">
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showCheckOutModal && (
+        <div className="modal-overlay">
+          <div className="modal-box">
+            <h3>Confirm Check-Out</h3>
+            <p>Mark this guest as checked out?</p>
+            <p>
+              <strong>Payment:</strong> {selectedPaymentStatus}
+            </p>
+
+            <div className="modal-actions">
+              <button
+                onClick={() => setShowCheckOutModal(false)}
+                className="btn-small"
+              >
+                Cancel
+              </button>
+
+              <button onClick={handleCheckOut} className="btn-small btn-danger">
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showSuccessModal && (
+        <div className="modal-overlay">
+          <div className="modal-box">
+            <h3>Success ✅</h3>
+            <p>{successMessage}</p>
+
+            <div className="modal-actions">
+              <button
+                className="btn-primary"
+                onClick={() => setShowSuccessModal(false)}
+              >
+                OK
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
