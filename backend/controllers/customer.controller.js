@@ -141,30 +141,34 @@ exports.getCustomerBookings = async (req, res) => {
     const connection = await pool.getConnection();
 
     const [bookings] = await connection.query(
-      `SELECT 
-        b.id,
-        b.room_id,
-        b.user_id,
-        b.check_in,
-        b.check_out,
-        b.total_amount + 0 as total_amount,
-        b.status,
-        r.room_number,
-        r.type,
-        r.price + 0 as price
-      FROM bookings b
-      JOIN rooms r ON b.room_id = r.id
-      WHERE b.user_id = ?
-      ORDER BY b.check_in DESC`,
-      [customerId],
+      `
+  SELECT
+    b.id,
+    b.room_id,
+    b.user_id,
+    b.check_in,
+    b.check_out,
+    b.total_amount + 0 AS total_amount,
+    b.status,
+    r.room_number,
+    r.type,
+    rv.id AS review_id,
+    rv.rating AS review_rating,
+    rv.title AS review_title,
+    rv.review_text
+  FROM bookings b
+  JOIN rooms r ON b.room_id = r.id
+  LEFT JOIN reviews rv ON rv.booking_id = b.id
+  WHERE b.user_id = ?
+  ORDER BY b.id DESC
+  `,
+      [req.user.id],
     );
-
-    connection.release();
 
     const normalized = bookings.map((b) => ({
       ...b,
       total_amount: parseFloat(b.total_amount),
-      price: parseFloat(b.price),
+      review_rating: b.review_rating ? Number(b.review_rating) : null,
     }));
 
     return res.status(200).json({
