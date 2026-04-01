@@ -6,6 +6,9 @@ import '../styles/pages.css';
 export default function MyBookings() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [cancellingId, setCancellingId] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedBookingId, setSelectedBookingId] = useState(null);
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const customer =
@@ -34,17 +37,28 @@ export default function MyBookings() {
     }
   };
 
-  const handleCancelBooking = async (bookingId) => {
-    if (window.confirm('Are you sure you want to cancel this booking?')) {
-      try {
-        await API.delete(`/customer/bookings/${bookingId}`);
-        fetchCustomerBookings();
-        alert('Booking cancelled successfully');
-      } catch (err) {
-        setError(err.response?.data?.message || 'Failed to cancel booking');
-      }
-    }
-  };
+ const handleCancelBooking = async () => {
+   if (!selectedBookingId) return;
+
+   setCancellingId(selectedBookingId);
+
+   try {
+     await API.delete(`/customer/bookings/${selectedBookingId}`);
+
+     setBookings((prev) =>
+       prev.map((b) =>
+         b.id === selectedBookingId ? { ...b, status: "cancelled" } : b,
+       ),
+     );
+
+     setShowModal(false);
+     setSelectedBookingId(null);
+   } catch (err) {
+     setError(err.response?.data?.message || "Failed to cancel booking");
+   } finally {
+     setCancellingId(null);
+   }
+ };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -66,15 +80,28 @@ export default function MyBookings() {
 
       <div className="page-header">
         <div style={{ flex: 1 }}>
-          <p style={{ color: '#e2e8f0', margin: '0', fontSize: '16px', opacity: '0.9' }}>
+          <p
+            style={{
+              color: "#e2e8f0",
+              margin: "0",
+              fontSize: "16px",
+              opacity: "0.9",
+            }}
+          >
             View and manage all your hotel bookings in one place
           </p>
         </div>
         <div>
-          <button onClick={() => navigate('/browse-rooms')} className="btn-book" style={{ marginRight: '15px' }}>
+          <button
+            onClick={() => navigate("/browse-rooms")}
+            className="btn-book"
+            style={{ marginRight: "15px" }}
+          >
             Book More Rooms
           </button>
-          <button onClick={handleLogout} className="btn-customer-logout">Logout</button>
+          <button onClick={handleLogout} className="btn-customer-logout">
+            Logout
+          </button>
         </div>
       </div>
 
@@ -82,7 +109,19 @@ export default function MyBookings() {
 
       {bookings.length === 0 ? (
         <div className="coming-soon">
-          <p>You haven't made any bookings yet. <span onClick={() => navigate('/browse-rooms')} style={{ color: '#3b82f6', cursor: 'pointer', textDecoration: 'underline' }}>Book a room now!</span></p>
+          <p>
+            You haven't made any bookings yet.{" "}
+            <span
+              onClick={() => navigate("/browse-rooms")}
+              style={{
+                color: "#3b82f6",
+                cursor: "pointer",
+                textDecoration: "underline",
+              }}
+            >
+              Book a room now!
+            </span>
+          </p>
         </div>
       ) : (
         <div className="table-wrapper">
@@ -107,14 +146,20 @@ export default function MyBookings() {
                   <td>{new Date(booking.check_out).toLocaleDateString()}</td>
                   <td>${Number(booking.total_amount || 0).toFixed(2)}</td>
                   <td>
-                    <span className={`status-badge status-${booking.status.toLowerCase()}`}>
+                    <span
+                      className={`status-badge status-${booking.status.toLowerCase()}`}
+                    >
                       {booking.status}
                     </span>
                   </td>
                   <td>
-                    {(booking.status === 'reserved' || booking.status === 'checked_in') && (
+                    {(booking.status === "reserved" ||
+                      booking.status === "checked_in") && (
                       <button
-                        onClick={() => handleCancelBooking(booking.id)}
+                        onClick={() => {
+                          setSelectedBookingId(booking.id);
+                          setShowModal(true);
+                        }}
                         className="btn-small btn-danger"
                       >
                         Cancel
@@ -125,6 +170,37 @@ export default function MyBookings() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+      {showModal && (
+        <div className="modal-overlay">
+          <div className="modal-box">
+            <h3>Cancel Booking</h3>
+            <p>Are you sure you want to cancel this booking?</p>
+            <p>Cancellation is non-refundable.</p>
+
+            <div className="modal-actions">
+              <button
+                className="btn-small"
+                onClick={() => {
+                  setShowModal(false);
+                  setSelectedBookingId(null);
+                }}
+              >
+                No
+              </button>
+
+              <button
+                className="btn-small btn-danger"
+                onClick={handleCancelBooking}
+                disabled={cancellingId === selectedBookingId}
+              >
+                {cancellingId === selectedBookingId
+                  ? "Cancelling..."
+                  : "Yes, Cancel"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -20,3 +20,9 @@ router.delete(
 );
 
 module.exports = router;
+
+router.delete(
+  "/:bookingId",
+  authMiddleware("customer"),
+  customerController.cancelBooking,
+);
