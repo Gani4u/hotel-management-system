@@ -32,5 +32,10 @@ router.put(
   authMiddleware(["admin", "staff"]),
   bookingController.updateBookingStatus,
 );
+router.get(
+  "/:bookingId/bill",
+  authMiddleware(["admin", "staff", "customer"]),
+  bookingController.generateBill,
+);
 
 module.exports = router;
