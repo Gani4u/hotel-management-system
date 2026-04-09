@@ -3,7 +3,7 @@ const PDFDocument = require("pdfkit");
 
 exports.createBooking = async (req, res) => {
   try {
-    const { roomId, checkIn, checkOut, totalAmount } = req.body;
+    const { roomId, checkIn, checkOut, totalAmount, paymentStatus } = req.body;
     const userId = req.user.id;
 
     if (!roomId || !checkIn || !checkOut || !totalAmount) {
@@ -31,22 +31,28 @@ exports.createBooking = async (req, res) => {
         return res.status(409).json({ message: "Room is not available" });
       }
 
+      // Set initial booking status to "pending" when payment is completed by customer
+      const bookingStatus = paymentStatus === "completed" ? "pending" : "pending";
+      const initialPaymentStatus = paymentStatus || "pending";
+
       const [result] = await connection.query(
-        "INSERT INTO bookings (room_id, user_id, check_in, check_out, total_amount, status) VALUES (?, ?, ?, ?, ?, ?)",
-        [roomId, userId, checkIn, checkOut, totalAmount, "reserved"],
+        "INSERT INTO bookings (room_id, user_id, check_in, check_out, total_amount, status, payment_status) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        [roomId, userId, checkIn, checkOut, totalAmount, bookingStatus, initialPaymentStatus],
       );
 
-      await connection.query("UPDATE rooms SET status = ? WHERE id = ?", [
-        "booked",
-        roomId,
-      ]);
+      // Room remains available until admin confirms booking
+      // await connection.query("UPDATE rooms SET status = ? WHERE id = ?", [
+      //   "booked",
+      //   roomId,
+      // ]);
 
       await connection.commit();
       connection.release();
 
       return res.status(201).json({
-        message: "Booking created successfully",
+        message: "Booking created successfully. Awaiting admin verification.",
         bookingId: result.insertId,
+        status: "pending_verification"
       });
     } catch (error) {
       await connection.rollback();
@@ -72,6 +78,9 @@ exports.getAllBookings = async (req, res) => {
         b.check_out,
         b.total_amount + 0 as total_amount,
         b.status,
+        b.payment_status,
+        b.payment_verified_at,
+        b.admin_notes,
         r.room_number,
         r.type,
         r.price + 0 as price,
@@ -328,6 +337,152 @@ exports.getTodayCheckOuts = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
+// ==================== PAYMENT FLOW FUNCTIONS ====================
+
+exports.getPendingBookings = async (req, res) => {
+  try {
+    const connection = await pool.getConnection();
+
+    const [bookings] = await connection.query(
+      `SELECT 
+        b.id,
+        b.room_id,
+        b.user_id,
+        b.check_in,
+        b.check_out,
+        b.total_amount + 0 as total_amount,
+        b.status,
+        b.payment_status,
+        b.created_at,
+        r.room_number,
+        r.type,
+        r.price + 0 as price,
+        u.name,
+        u.email,
+        u.phone
+      FROM bookings b
+      JOIN rooms r ON b.room_id = r.id
+      JOIN users u ON b.user_id = u.id
+      WHERE b.status = 'pending' AND b.payment_status = 'completed'
+      ORDER BY b.created_at ASC`,
+    );
+
+    connection.release();
+
+    return res.status(200).json({
+      message: "Pending bookings retrieved successfully",
+      data: bookings,
+    });
+  } catch (error) {
+    console.error("Get pending bookings error:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+exports.approveBooking = async (req, res) => {
+  const connection = await pool.getConnection();
+  try {
+    const { id } = req.params;
+    const { adminNotes } = req.body;
+
+    // Get booking and room_id first
+    const [checkBooking] = await connection.query(
+      "SELECT room_id FROM bookings WHERE id = ?",
+      [id]
+    );
+
+    if (checkBooking.length === 0) {
+      connection.release();
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    const roomId = checkBooking[0].room_id;
+
+    // Update booking status to 'reserved'
+    const [result] = await connection.query(
+      "UPDATE bookings SET status = ?, payment_verified_at = ?, admin_notes = ? WHERE id = ?",
+      ['reserved', new Date(), adminNotes || null, id]
+    );
+
+    // Update room status to 'booked'
+    await connection.query(
+      "UPDATE rooms SET status = ? WHERE id = ?",
+      ['booked', roomId]
+    );
+
+    if (result.affectedRows === 0) {
+      connection.release();
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    const [booking] = await connection.query(
+      `SELECT b.*, r.room_number, u.email, u.name FROM bookings b
+       JOIN rooms r ON b.room_id = r.id
+       JOIN users u ON b.user_id = u.id
+       WHERE b.id = ?`,
+      [id]
+    );
+
+    connection.release();
+
+    return res.json({ 
+      message: "Booking approved successfully", 
+      booking: booking[0] 
+    });
+  } catch (err) {
+    connection.release();
+    console.error("Approve booking error:", err);
+    return res.status(500).json({ message: "Failed to approve booking" });
+  }
+};
+
+exports.cancelPendingBooking = async (req, res) => {
+  const connection = await pool.getConnection();
+  try {
+    const { id } = req.params;
+    const { adminNotes } = req.body;
+
+    // Get booking and room_id first
+    const [checkBooking] = await connection.query(
+      "SELECT room_id FROM bookings WHERE id = ?",
+      [id]
+    );
+
+    if (checkBooking.length === 0) {
+      connection.release();
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    const roomId = checkBooking[0].room_id;
+
+    // Update booking to cancelled
+    const [result] = await connection.query(
+      "UPDATE bookings SET status = ?, admin_notes = ? WHERE id = ?",
+      ['cancelled', adminNotes || null, id]
+    );
+
+    // Update room status back to available
+    await connection.query(
+      "UPDATE rooms SET status = ? WHERE id = ?",
+      ['available', roomId]
+    );
+
+    if (result.affectedRows === 0) {
+      connection.release();
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    connection.release();
+
+    return res.json({ message: "Booking cancelled successfully" });
+  } catch (err) {
+    connection.release();
+    console.error("Cancel pending booking error:", err);
+    return res.status(500).json({ message: "Failed to cancel booking" });
+  }
+};
+
 // -------------------- helpers --------------------
 const formatCurrency = (amount) =>
   `₹${Number(amount || 0).toLocaleString("en-IN", {
