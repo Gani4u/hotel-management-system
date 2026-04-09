@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import API from '../services/api';
+import PaymentModal from '../components/PaymentModal';
 import '../styles/pages.css';
 
 export default function BookRoom() {
@@ -20,13 +21,10 @@ export default function BookRoom() {
     JSON.parse(localStorage.getItem("user")) ||
     {};
     const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-  useEffect(() => {
-    fetchRoomDetails();
-  }, [roomId]);
-
-  const fetchRoomDetails = async () => {
+  const fetchRoomDetails = useCallback(async () => {
     try {
       setPageLoading(true);
       const response = await API.get(`/public/rooms/${roomId}`);
@@ -38,7 +36,11 @@ export default function BookRoom() {
     } finally {
       setPageLoading(false);
     }
-  };
+  }, [roomId]);
+
+  useEffect(() => {
+    fetchRoomDetails();
+  }, [fetchRoomDetails]);
 
   const calculateTotal = (checkIn, checkOut, price) => {
     if (checkIn && checkOut && price) {
@@ -89,31 +91,44 @@ export default function BookRoom() {
       return;
     }
 
-    setShowConfirmModal(true); // ✅ instead of API call
+    setShowConfirmModal(true);
   };
 
   if (pageLoading) {
     return <div className="page-container"><div className="loading">Loading room details...</div></div>;
   }
-  const confirmBooking = async () => {
-    setLoading(true);
+  
+  const confirmBooking = () => {
+    // Move to payment modal instead of directly booking
+    setShowConfirmModal(false);
+    setShowPaymentModal(true);
+  };
 
+  const handlePaymentDone = async () => {
+    setLoading(true);
     try {
+      // Create booking with "completed" payment status - status becomes "pending" in backend
       await API.post("/bookings", {
         roomId: parseInt(roomId, 10),
         checkIn: formData.checkIn,
         checkOut: formData.checkOut,
         totalAmount,
+        paymentStatus: "completed", // Payment marked as completed by customer
       });
 
-      setShowConfirmModal(false);
-      setShowSuccessModal(true); // ✅ replaces alert
+      setShowPaymentModal(false);
+      setShowSuccessModal(true);
     } catch (err) {
       setError(err.response?.data?.message || "Booking failed");
-      setShowConfirmModal(false);
+      setShowPaymentModal(false);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePaymentCancel = () => {
+    setShowPaymentModal(false);
+    setShowConfirmModal(true); // Go back to confirmation modal
   };
 
   if (!customer.id) {
@@ -248,38 +263,43 @@ export default function BookRoom() {
       )}
       {showConfirmModal && roomDetails && (
         <div className="modal-overlay">
-          <div className="modal-box">
-            <h3>Confirm Booking</h3>
+          <div className="confirm-modal">
+            <h2>Confirm Booking</h2>
             <p>Are you sure you want to book this room?</p>
 
-            <div className="modal-summary">
-              <p>
-                <strong>Room:</strong> {roomDetails.room_number}
-              </p>
-              <p>
-                <strong>Type:</strong> {roomDetails.type}
-              </p>
-              <p>
-                <strong>Check-In:</strong> {formData.checkIn}
-              </p>
-              <p>
-                <strong>Check-Out:</strong> {formData.checkOut}
-              </p>
-              <p>
-                <strong>Total:</strong> ${totalAmount.toFixed(2)}
-              </p>
+            <div className="confirm-summary">
+              <div className="confirm-summary-item room">
+                <label>Room Number</label>
+                <value>{roomDetails.room_number}</value>
+              </div>
+              <div className="confirm-summary-item type">
+                <label>Type</label>
+                <value>{roomDetails.type}</value>
+              </div>
+              <div className="confirm-summary-item check-in">
+                <label>Check-In</label>
+                <value>{new Date(formData.checkIn).toLocaleDateString()}</value>
+              </div>
+              <div className="confirm-summary-item check-out">
+                <label>Check-Out</label>
+                <value>{new Date(formData.checkOut).toLocaleDateString()}</value>
+              </div>
+              <div className="confirm-summary-item total">
+                <label>Total Amount</label>
+                <value>${totalAmount.toFixed(2)}</value>
+              </div>
             </div>
 
-            <div className="modal-actions">
+            <div className="confirm-modal-actions">
               <button
-                className="btn-small"
+                className="cancel"
                 onClick={() => setShowConfirmModal(false)}
               >
                 Cancel
               </button>
 
               <button
-                className="btn-small btn-primary"
+                className="confirm"
                 onClick={confirmBooking}
                 disabled={loading}
               >
@@ -289,11 +309,22 @@ export default function BookRoom() {
           </div>
         </div>
       )}
+
+      <PaymentModal
+        open={showPaymentModal}
+        roomDetails={roomDetails}
+        totalAmount={totalAmount}
+        formData={formData}
+        onCancel={handlePaymentCancel}
+        onDone={handlePaymentDone}
+        loading={loading}
+      />
+
       {showSuccessModal && (
         <div className="modal-overlay">
           <div className="modal-box">
             <h3>Booking Successful 🎉</h3>
-            <p>Your room has been booked successfully.</p>
+            <p>Your payment has been received. Your booking is pending admin verification. You will receive a confirmation email once approved.</p>
 
             <div className="modal-actions">
               <button

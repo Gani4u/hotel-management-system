@@ -7,6 +7,26 @@ const router = express.Router();
 router.post("/", authMiddleware("customer"), bookingController.createBooking);
 
 router.get("/", authMiddleware(["admin", "staff"]), bookingController.getAllBookings);
+
+// Payment & Admin Approval Routes
+router.get(
+  "/pending-bookings/list",
+  authMiddleware(["admin", "staff"]),
+  bookingController.getPendingBookings,
+);
+
+router.post(
+  "/:id/approve",
+  authMiddleware(["admin", "staff"]),
+  bookingController.approveBooking,
+);
+
+router.post(
+  "/:id/cancel-pending",
+  authMiddleware(["admin", "staff"]),
+  bookingController.cancelPendingBooking,
+);
+
 router.get(
   "/today/check-ins",
   authMiddleware(["admin", "staff"]),
