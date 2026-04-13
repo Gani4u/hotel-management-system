@@ -159,7 +159,6 @@ export default function BookRoom() {
         <div className="booking-form-container">
           <form onSubmit={handleSubmit} className="booking-form">
             <h2>Booking Details</h2>
-
             <div className="form-group">
               <label>Room Number</label>
               <input
@@ -169,7 +168,6 @@ export default function BookRoom() {
                 style={{ backgroundColor: "#f5f5f5" }}
               />
             </div>
-
             <div className="form-group">
               <label>Room Type</label>
               <input
@@ -179,17 +177,15 @@ export default function BookRoom() {
                 style={{ backgroundColor: "#f5f5f5" }}
               />
             </div>
-
             <div className="form-group">
               <label>Price per Night</label>
               <input
                 type="text"
-                value={`$${roomDetails.price}`}
+                value={`₹${roomDetails.price}`}
                 disabled
                 style={{ backgroundColor: "#f5f5f5" }}
               />
             </div>
-
             <div className="form-group">
               <label>Check-In Date</label>
               <input
@@ -201,7 +197,6 @@ export default function BookRoom() {
                 min={new Date().toISOString().split("T")[0]}
               />
             </div>
-
             <div className="form-group">
               <label>Check-Out Date</label>
               <input
@@ -213,7 +208,6 @@ export default function BookRoom() {
                 min={formData.checkIn || new Date().toISOString().split("T")[0]}
               />
             </div>
-
             <div className="form-group">
               <label>Guest Name</label>
               <input
@@ -223,7 +217,6 @@ export default function BookRoom() {
                 style={{ backgroundColor: "#f5f5f5" }}
               />
             </div>
-
             <div className="form-group">
               <label>Email</label>
               <input
@@ -233,23 +226,23 @@ export default function BookRoom() {
                 style={{ backgroundColor: "#f5f5f5" }}
               />
             </div>
-
-            <div className="form-group">
-              <label>Phone</label>
-              <input
-                type="tel"
-                value={customer.phone}
-                disabled
-                style={{ backgroundColor: "#f5f5f5" }}
-              />
-            </div>
-
+            
+<div className="form-group">
+  <label>Phone</label>
+  <input
+    type="tel"
+    name="phone"
+    value={formData.phone || ""}
+    onChange={handleChange}
+    placeholder="Enter phone number"
+  />
+</div>
+ 
             {totalAmount > 0 && (
               <div className="total-amount">
                 <h3>Total Amount: ${totalAmount.toFixed(2)}</h3>
               </div>
             )}
-
             <button
               type="submit"
               disabled={loading}
@@ -282,7 +275,9 @@ export default function BookRoom() {
               </div>
               <div className="confirm-summary-item check-out">
                 <label>Check-Out</label>
-                <value>{new Date(formData.checkOut).toLocaleDateString()}</value>
+                <value>
+                  {new Date(formData.checkOut).toLocaleDateString()}
+                </value>
               </div>
               <div className="confirm-summary-item total">
                 <label>Total Amount</label>
@@ -324,7 +319,10 @@ export default function BookRoom() {
         <div className="modal-overlay">
           <div className="modal-box">
             <h3>Booking Successful 🎉</h3>
-            <p>Your payment has been received. Your booking is pending admin verification. You will receive a confirmation email once approved.</p>
+            <p>
+              Your payment has been received. Your booking is pending admin
+              verification. You will receive a confirmation email once approved.
+            </p>
 
             <div className="modal-actions">
               <button

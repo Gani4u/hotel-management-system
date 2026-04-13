@@ -58,15 +58,28 @@ export default function BrowseRooms() {
 
       <div className="page-header">
         <div style={{ flex: 1 }}>
-          <p style={{ color: '#e2e8f0', margin: '0', fontSize: '16px', opacity: '0.9' }}>
+          <p
+            style={{
+              color: "#e2e8f0",
+              margin: "0",
+              fontSize: "16px",
+              opacity: "0.9",
+            }}
+          >
             Browse our luxurious rooms and book your dream vacation
           </p>
         </div>
         <div>
-          <button onClick={() => navigate('/my-bookings')} className="btn-book" style={{ marginRight: '15px' }}>
+          <button
+            onClick={() => navigate("/my-bookings")}
+            className="btn-book"
+            style={{ marginRight: "15px" }}
+          >
             My Bookings
           </button>
-          <button onClick={handleLogout} className="btn-customer-logout">Logout</button>
+          <button onClick={handleLogout} className="btn-customer-logout">
+            Logout
+          </button>
         </div>
       </div>
 
@@ -85,14 +98,23 @@ export default function BrowseRooms() {
                 <span className="room-type">{room.type}</span>
               </div>
               <div className="room-details">
-                <p><strong>Price per night:</strong> ${room.price}</p>
-                <p><strong>Capacity:</strong> {room.capacity} guests</p>
-                <p><strong>Status:</strong> <span className="status-badge status-available">Available</span></p>
+                <p>
+                  <strong>Price per night:</strong> ₹{room.price}
+                </p>
+                <p>
+                  <strong>Capacity:</strong> {room.capacity} guests
+                </p>
+                <p>
+                  <strong>Status:</strong>{" "}
+                  <span className="status-badge status-available">
+                    Available
+                  </span>
+                </p>
               </div>
               <button
                 onClick={() => handleBookRoom(room.id)}
                 className="btn-book"
-                style={{ width: '100%', marginTop: '15px' }}
+                style={{ width: "100%", marginTop: "15px" }}
               >
                 Book Now
               </button>

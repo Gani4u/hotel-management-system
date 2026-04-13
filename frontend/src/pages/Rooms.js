@@ -81,7 +81,7 @@ export default function Rooms() {
 
     try {
       if (editingId) {
-        await API.put(`/rooms/${editingId}`, {
+        await API.put(`/rooms/₹{editingId}`, {
           roomNumber: formData.roomNumber,
           type: formData.roomType,
           price: formData.pricePerNight,
@@ -110,7 +110,7 @@ export default function Rooms() {
    if (!selectedRoomId) return;
 
    try {
-     await API.delete(`/rooms/${selectedRoomId}`);
+     await API.delete(`/rooms/₹{selectedRoomId}`);
      setShowDeleteModal(false);
      setSelectedRoomId(null);
      fetchRooms();
@@ -156,7 +156,7 @@ export default function Rooms() {
                 <td>${room.price}</td>
                 <td>{room.capacity || "-"}</td>
                 <td>
-                  <span className={`status-badge status-${room.status}`}>
+                  <span className={`status-badge status-₹{room.status}`}>
                     {room.status}
                   </span>
                 </td>

@@ -76,7 +76,7 @@ export default function Bookings() {
   const confirmApproval = async () => {
     try {
       setUpdatingId(selectedBooking);
-      await API.post(`/bookings/${selectedBooking}/approve`, {
+      await API.post(`/bookings/₹{selectedBooking}/approve`, {
         adminNotes: approvalNotes,
       });
       setShowApprovalModal(false);
@@ -180,7 +180,7 @@ export default function Bookings() {
                   <td>{booking.room_number}</td>
                   <td>{new Date(booking.check_in).toLocaleDateString()}</td>
                   <td>{new Date(booking.check_out).toLocaleDateString()}</td>
-                  <td>${Number(booking.total_amount || 0).toFixed(2)}</td>
+                  <td>₹{Number(booking.total_amount || 0).toFixed(2)}</td>
                   <td>
                     <span className={`status-badge status-${booking.status}`}>
                       {booking.status}
