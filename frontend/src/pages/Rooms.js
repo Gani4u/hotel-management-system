@@ -8,6 +8,8 @@ export default function Rooms() {
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedRoomId, setSelectedRoomId] = useState(null);
   const [formData, setFormData] = useState({
     roomNumber: '',
     roomType: '',
@@ -15,6 +17,8 @@ export default function Rooms() {
     capacity: '',
     description: '',
   });
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const isAdmin = user.role === 'admin';
 
   useEffect(() => {
     fetchRooms();
@@ -34,6 +38,11 @@ export default function Rooms() {
   };
 
   const handleOpenModal = () => {
+    if (!isAdmin) {
+      setError('Only admins can manage rooms');
+      return;
+    }
+
     setEditingId(null);
     setFormData({
       roomNumber: '',
@@ -46,6 +55,11 @@ export default function Rooms() {
   };
 
   const handleEditRoom = (room) => {
+    if (!isAdmin) {
+      setError('Only admins can manage rooms');
+      return;
+    }
+
     setEditingId(room.id);
     setFormData({
       roomNumber: room.room_number,
@@ -59,11 +73,26 @@ export default function Rooms() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!isAdmin) {
+      setError('Only admins can manage rooms');
+      return;
+    }
+
     try {
       if (editingId) {
-        await API.put(`/rooms/${editingId}`, formData);
+        await API.put(`/rooms/₹{editingId}`, {
+          roomNumber: formData.roomNumber,
+          type: formData.roomType,
+          price: formData.pricePerNight,
+          status: 'available',
+        });
       } else {
-        await API.post('/rooms', formData);
+        await API.post('/rooms', {
+          roomNumber: formData.roomNumber,
+          roomType: formData.roomType,
+          pricePerNight: formData.pricePerNight,
+        });
       }
       setShowModal(false);
       fetchRooms();
@@ -72,16 +101,23 @@ export default function Rooms() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure?')) {
-      try {
-        await API.delete(`/rooms/${id}`);
-        fetchRooms();
-      } catch (err) {
-        setError(err.response?.data?.message || 'Delete failed');
-      }
-    }
-  };
+ const handleDelete = async () => {
+   if (!isAdmin) {
+     setError("Only admins can manage rooms");
+     return;
+   }
+
+   if (!selectedRoomId) return;
+
+   try {
+     await API.delete(`/rooms/₹{selectedRoomId}`);
+     setShowDeleteModal(false);
+     setSelectedRoomId(null);
+     fetchRooms();
+   } catch (err) {
+     setError(err.response?.data?.message || "Delete failed");
+   }
+ };
 
   if (loading) {
     return <div className="page-container"><div className="loading">Loading rooms...</div></div>;
@@ -91,7 +127,11 @@ export default function Rooms() {
     <div className="page-container">
       <div className="page-header">
         <h1>Rooms Management</h1>
-        <button onClick={handleOpenModal} className="btn-primary">+ Add Room</button>
+        {isAdmin && (
+          <button onClick={handleOpenModal} className="btn-primary">
+            + Add Room
+          </button>
+        )}
       </div>
 
       {error && <div className="error-message">{error}</div>}
@@ -105,7 +145,7 @@ export default function Rooms() {
               <th>Price/Night</th>
               <th>Capacity</th>
               <th>Status</th>
-              <th>Actions</th>
+              {isAdmin && <th>Actions</th>}
             </tr>
           </thead>
           <tbody>
@@ -114,61 +154,118 @@ export default function Rooms() {
                 <td>{room.room_number}</td>
                 <td>{room.type}</td>
                 <td>${room.price}</td>
-                <td>{room.capacity} guests</td>
-                <td><span className={`status-badge status-${room.status}`}>{room.status}</span></td>
+                <td>{room.capacity || "-"}</td>
                 <td>
-                  <button onClick={() => handleEditRoom(room)} className="btn-small btn-edit">Edit</button>
-                  <button onClick={() => handleDelete(room.id)} className="btn-small btn-danger">Delete</button>
+                  <span className={`status-badge status-₹{room.status}`}>
+                    {room.status}
+                  </span>
                 </td>
+                {isAdmin && (
+                  <td>
+                    <button
+                      onClick={() => handleEditRoom(room)}
+                      className="btn-small btn-edit"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedRoomId(room.id);
+                        setShowDeleteModal(true);
+                      }}
+                      className="btn-small btn-danger"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      {showModal && (
+      {showModal && isAdmin && (
         <div className="modal-overlay">
           <div className="modal">
             <div className="modal-header">
-              <h2>{editingId ? 'Edit Room' : 'Create Room'}</h2>
-              <button onClick={() => setShowModal(false)} className="close-btn">&times;</button>
+              <h2>{editingId ? "Edit Room" : "Create Room"}</h2>
+              <button onClick={() => setShowModal(false)} className="close-btn">
+                &times;
+              </button>
             </div>
             <form onSubmit={handleSubmit}>
               <input
                 type="text"
                 placeholder="Room Number"
                 value={formData.roomNumber}
-                onChange={(e) => setFormData({ ...formData, roomNumber: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, roomNumber: e.target.value })
+                }
                 required
               />
               <input
                 type="text"
                 placeholder="Room Type"
                 value={formData.roomType}
-                onChange={(e) => setFormData({ ...formData, roomType: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, roomType: e.target.value })
+                }
                 required
               />
               <input
                 type="number"
                 placeholder="Price Per Night"
                 value={formData.pricePerNight}
-                onChange={(e) => setFormData({ ...formData, pricePerNight: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, pricePerNight: e.target.value })
+                }
                 required
               />
               <input
                 type="number"
                 placeholder="Capacity"
                 value={formData.capacity}
-                onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, capacity: e.target.value })
+                }
                 required
               />
               <textarea
                 placeholder="Description"
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
               ></textarea>
-              <button type="submit" className="btn-primary">Save Room</button>
+              <button type="submit" className="btn-primary">
+                Save Room
+              </button>
             </form>
+          </div>
+        </div>
+      )}
+      {showDeleteModal && isAdmin && (
+        <div className="modal-overlay">
+          <div className="modal-box">
+            <h3>Delete Room</h3>
+            <p>Are you sure you want to delete this room?</p>
+
+            <div className="modal-actions">
+              <button
+                className="btn-small"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setSelectedRoomId(null);
+                }}
+              >
+                Cancel
+              </button>
+
+              <button className="btn-small btn-danger" onClick={handleDelete}>
+                Yes, Delete
+              </button>
+            </div>
           </div>
         </div>
       )}

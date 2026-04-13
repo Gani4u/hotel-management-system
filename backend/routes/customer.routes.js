@@ -1,16 +1,28 @@
-const express = require('express');
-const customerController = require('../controllers/customer.controller');
-const authMiddleware = require('../middleware/auth.middleware');
+const express = require("express");
+const customerController = require("../controllers/customer.controller");
+const authMiddleware = require("../middleware/auth.middleware");
 
 const router = express.Router();
 
-// Public routes (no authentication required)
-router.post('/register', customerController.registerCustomer);
-router.post('/login', customerController.loginCustomer);
-router.get('/rooms/available', customerController.getAvailableRooms);
+router.get("/rooms/available", customerController.getAvailableRooms);
+router.post("/register", customerController.registerCustomer);
+router.post("/login", customerController.loginCustomer);
 
-// Protected routes (requires authentication)
-router.get('/bookings', authMiddleware, customerController.getCustomerBookings);
-router.delete('/bookings/:bookingId', authMiddleware, customerController.cancelBooking);
+router.get(
+  "/bookings",
+  authMiddleware("customer"),
+  customerController.getCustomerBookings,
+);
+router.delete(
+  "/bookings/:bookingId",
+  authMiddleware("customer"),
+  customerController.cancelBooking,
+);
 
 module.exports = router;
+
+router.delete(
+  "/:bookingId",
+  authMiddleware("customer"),
+  customerController.cancelBooking,
+);

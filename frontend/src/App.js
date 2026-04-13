@@ -3,43 +3,57 @@ import PrivateRoute from './components/PrivateRoute';
 import Sidebar from './layout/Sidebar';
 import Navbar from './layout/Navbar';
 import Landing from './pages/Landing';
-import Login from './pages/Login';
-import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Rooms from './pages/Rooms';
 import Bookings from './pages/Bookings';
 import Customers from './pages/Customers';
-import CustomerRegister from './pages/CustomerRegister';
-import CustomerLogin from './pages/CustomerLogin';
 import BrowseRooms from './pages/BrowseRooms';
 import BookRoom from './pages/BookRoom';
 import MyBookings from './pages/MyBookings';
 import CheckInCheckOut from './pages/CheckInCheckOut';
+import Reviews from './pages/Review';
 import './App.css';
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public Landing Page */}
         <Route path="/" element={<Landing />} />
 
-        {/* Staff/Admin Routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        <Route path="/login" element={<Navigate to="/" replace />} />
+        <Route path="/register" element={<Navigate to="/" replace />} />
+        <Route path="/customer-register" element={<Navigate to="/" replace />} />
+        <Route path="/customer-login" element={<Navigate to="/" replace />} />
 
-        {/* Customer Routes */}
-        <Route path="/customer-register" element={<CustomerRegister />} />
-        <Route path="/customer-login" element={<CustomerLogin />} />
-        <Route path="/browse-rooms" element={<BrowseRooms />} />
-        <Route path="/book-room/:roomId" element={<BookRoom />} />
-        <Route path="/my-bookings" element={<MyBookings />} />
+        <Route
+          path="/browse-rooms"
+          element={
+            <PrivateRoute allowedRoles={['customer']}>
+              <BrowseRooms />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/book-room/:roomId"
+          element={
+            <PrivateRoute allowedRoles={['customer']}>
+              <BookRoom />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/my-bookings"
+          element={
+            <PrivateRoute allowedRoles={['customer']}>
+              <MyBookings />
+            </PrivateRoute>
+          }
+        />
 
-        {/* Protected Staff/Admin Routes */}
         <Route
           path="/*"
           element={
-            <PrivateRoute>
+            <PrivateRoute allowedRoles={['admin', 'staff']}>
               <div className="app-layout">
                 <Sidebar />
                 <div className="app-content">
@@ -53,6 +67,7 @@ export default function App() {
                       <Route path="/check-in-out" element={<CheckInCheckOut />} />
                       <Route path="/" element={<Navigate to="/dashboard" replace />} />
                       <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                      <Route path="/reviews" element={<Reviews />} />
                     </Routes>
                   </main>
                 </div>

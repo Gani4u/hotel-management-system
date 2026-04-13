@@ -54,8 +54,8 @@ export default function Landing() {
         state: { checkIn, checkOut }
       });
     } else {
-      navigate('/customer-login', {
-        state: { returnTo: `/book-room/${roomId}`, checkIn, checkOut }
+      navigate('/', {
+        state: { openLogin: true, loginTab: 'customer', returnTo: `/book-room/${roomId}`, checkIn, checkOut }
       });
     }
   };

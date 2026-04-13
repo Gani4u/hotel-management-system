@@ -8,20 +8,23 @@ export default function BrowseRooms() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const customer = JSON.parse(localStorage.getItem('customer') || '{}');
+  const customer =
+    JSON.parse(localStorage.getItem("customer")) ||
+    JSON.parse(localStorage.getItem("user")) ||
+    {};
 
   useEffect(() => {
     if (!customer.id) {
-      navigate('/customer-login');
+      navigate('/');
       return;
     }
     fetchAvailableRooms();
-  }, []);
+  }, [customer.id, navigate]);
 
   const fetchAvailableRooms = async () => {
     try {
       setLoading(true);
-      const response = await API.get('/customer/rooms/available');
+      const response = await API.get("/public/rooms");
       setRooms(response.data.data);
       setError('');
     } catch (err) {
@@ -31,14 +34,15 @@ export default function BrowseRooms() {
     }
   };
 
-  const handleBookRoom = (roomId) => {
-    navigate(`/book-room/${roomId}`);
+  const handleBookRoom = (id) => {
+    navigate(`/book-room/${id}`);
   };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('customer');
-    navigate('/customer-login');
+    localStorage.removeItem('user');
+    navigate('/');
   };
 
   if (loading) {
@@ -47,14 +51,35 @@ export default function BrowseRooms() {
 
   return (
     <div className="page-container">
+      <div className="customer-header">
+        <h1>Available Rooms</h1>
+        <p>Welcome back, {customer.name}! Discover your perfect stay</p>
+      </div>
+
       <div className="page-header">
-        <div>
-          <h1>Available Rooms</h1>
-          <p style={{ color: '#666', margin: '5px 0 0 0' }}>Welcome, {customer.name}</p>
+        <div style={{ flex: 1 }}>
+          <p
+            style={{
+              color: "#e2e8f0",
+              margin: "0",
+              fontSize: "16px",
+              opacity: "0.9",
+            }}
+          >
+            Browse our luxurious rooms and book your dream vacation
+          </p>
         </div>
         <div>
-          <button onClick={() => navigate('/my-bookings')} className="btn-primary">My Bookings</button>
-          <button onClick={handleLogout} className="btn-logout" style={{ marginLeft: '10px' }}>Logout</button>
+          <button
+            onClick={() => navigate("/my-bookings")}
+            className="btn-book"
+            style={{ marginRight: "15px" }}
+          >
+            My Bookings
+          </button>
+          <button onClick={handleLogout} className="btn-customer-logout">
+            Logout
+          </button>
         </div>
       </div>
 
@@ -73,13 +98,23 @@ export default function BrowseRooms() {
                 <span className="room-type">{room.type}</span>
               </div>
               <div className="room-details">
-                <p><strong>Price per night:</strong> ${room.price}</p>
-                <p><strong>Status:</strong> <span className="status-badge status-available">Available</span></p>
+                <p>
+                  <strong>Price per night:</strong> ₹{room.price}
+                </p>
+                <p>
+                  <strong>Capacity:</strong> {room.capacity} guests
+                </p>
+                <p>
+                  <strong>Status:</strong>{" "}
+                  <span className="status-badge status-available">
+                    Available
+                  </span>
+                </p>
               </div>
               <button
                 onClick={() => handleBookRoom(room.id)}
-                className="btn-primary"
-                style={{ width: '100%' }}
+                className="btn-book"
+                style={{ width: "100%", marginTop: "15px" }}
               >
                 Book Now
               </button>
